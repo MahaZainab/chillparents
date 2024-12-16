@@ -5,7 +5,7 @@ from groq import Groq
 import tempfile
 import numpy as np
 from io import BytesIO
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration, AudioFrame
 
 # Set up Groq API client
 client = Groq(
@@ -37,10 +37,11 @@ def chatbot(audio_file):
     return response_text, temp_audio.name
 
 # Handle incoming audio recording via WebRTC
-def on_audio_frame(frame):
+def audio_callback(frame: AudioFrame):
     if frame is None:
         return None
-    # Convert the frame to a numpy array (audio data)
+    
+    # Convert the audio frame to a numpy array (audio data)
     audio_data = frame.to_ndarray()
 
     # Save the audio to a temporary file
@@ -70,7 +71,7 @@ def main():
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=webrtc_config,
         audio_receiver_size=1024,
-        on_audio_frame=on_audio_frame  # Correct callback here
+        audio_callback=audio_callback  # Use the correct callback here
     )
 
 if __name__ == "__main__":
