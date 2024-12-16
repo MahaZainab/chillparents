@@ -5,7 +5,7 @@ from groq import Groq
 import tempfile
 import numpy as np
 from io import BytesIO
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration, AudioFrame
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 
 # Set up Groq API client
 client = Groq(
@@ -37,20 +37,20 @@ def chatbot(audio_file):
     return response_text, temp_audio.name
 
 # Handle incoming audio recording via WebRTC
-def on_audio_frame(frame: AudioFrame) -> None:
-    # Extract audio data from the frame
+def on_audio_frame(frame):
+    if frame is None:
+        return None
+    # Convert the frame to a numpy array (audio data)
     audio_data = frame.to_ndarray()
-    audio_bytes = audio_data.tobytes()
 
-    # Save audio to a temporary file
+    # Save the audio to a temporary file
     temp_audio_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
-    with open(temp_audio_file.name, "wb") as f:
-        f.write(audio_bytes)
+    audio_data.tofile(temp_audio_file.name)  # Save the audio data to the file
 
-    # Process the audio and get response
+    # Process the audio and get a response
     response_text, response_audio_file = chatbot(temp_audio_file.name)
 
-    # Return the response text and the audio file for playback
+    # Display the chatbot response
     st.subheader("Chatbot Response:")
     st.text_area("Response Text", response_text, height=150)
     st.audio(response_audio_file, format="audio/mp3")
@@ -70,7 +70,7 @@ def main():
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=webrtc_config,
         audio_receiver_size=1024,
-        on_audio_frame=on_audio_frame  # Use the correct callback here
+        on_audio_frame=on_audio_frame  # Correct callback here
     )
 
 if __name__ == "__main__":
